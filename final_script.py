@@ -190,138 +190,143 @@ def optimize_param():
             tested.append((epochss,(W2VRMSE, W2VMAE)))
     return tested
 
-base_dir = '~/data/movielens/ml-1m'
 
-df_movies = pd.read_csv(os.path.join(base_dir, 'movies.dat'), delimiter='::', header=None,
-                        names=['movieId', 'title', 'genres'], engine='python')
-df_ratings = pd.read_csv(os.path.join(base_dir, 'ratings.dat'), delimiter='::', header=None,
-                         names=['userId', 'movieId', 'rating', 'timestamp'], engine='python')
+def main():
+    base_dir = '~/data/movielens/ml-1m'
 
-users = df_ratings['userId'].values
-items = df_ratings['movieId'].values
-ratings = df_ratings['rating'].values
+    df_movies = pd.read_csv(os.path.join(base_dir, 'movies.dat'), delimiter='::', header=None,
+                            names=['movieId', 'title', 'genres'], engine='python')
+    df_ratings = pd.read_csv(os.path.join(base_dir, 'ratings.dat'), delimiter='::', header=None,
+                             names=['userId', 'movieId', 'rating', 'timestamp'], engine='python')
 
-movie_ids = df_movies['movieId'].values
-movie_titles = df_movies['title'].values
-movie_genres = df_movies['genres'].values
+    users = df_ratings['userId'].values
+    items = df_ratings['movieId'].values
+    ratings = df_ratings['rating'].values
 
-
-map_movies_str = {}
-for i, movie_id in enumerate(tqdm(movie_ids)):
-    map_movies_str[i] = str(movie_id)
-
-map_movies_reverse = {}
-for i, movie_id in enumerate(tqdm(movie_ids)):
-    map_movies_reverse[str(movie_id)] = i
-
-vocab = []
-movies_mean_rating = {}
-
-for row in tqdm(list(zip(df_ratings['userId'], df_ratings['movieId'], df_ratings['rating']))):
-    item = str(row[1])
-    rating = row[2]
-    if item not in movies_mean_rating:
-        movies_mean_rating[item] = (1, rating)
-    else:
-        movies_mean_rating[item] = (movies_mean_rating[item][0] + 1, movies_mean_rating[item][1] + rating)
-        
-for movie_id in movie_ids:
-    movie_id = str(movie_id)
-    vocab.append([movie_id])
-    try:
-        movies_mean_rating[movie_id] = movies_mean_rating[movie_id][1] / movies_mean_rating[movie_id][0]
-    except KeyError:
-        movies_mean_rating[movie_id] = 2.5
-unique_genres = set([g for i in movie_genres for g in i.split('|')])
+    movie_ids = df_movies['movieId'].values
+    movie_titles = df_movies['title'].values
+    movie_genres = df_movies['genres'].values
 
 
-user = []
-user_id = 1
-# Test_sets are lists of dicts (user items)
-test_1, test_2, test_3, test_4, test_5 = [{}], [{}], [{}], [{}], [{}]
+    map_movies_str = {}
+    for i, movie_id in enumerate(tqdm(movie_ids)):
+        map_movies_str[i] = str(movie_id)
 
-# Train_sets are lists of lists(users) of two dicts (positive and negative items respectively)
-train_1, train_2, train_3, train_4, train_5 = [[{}, {}]], [[{}, {}]], [[{}, {}]], [[{}, {}]], [[{}, {}]]
-test_sets = [test_1, test_2, test_3, test_4, test_5]
-train_sets = [train_1, train_2, train_3, train_4, train_5]
+    map_movies_reverse = {}
+    for i, movie_id in enumerate(tqdm(movie_ids)):
+        map_movies_reverse[str(movie_id)] = i
 
-item_user_matrix_1 = sparse.lil_matrix((len(movie_ids), len(users)), dtype=np.float32)
-item_user_matrix_5 = item_user_matrix_4 = item_user_matrix_3 = item_user_matrix_2 = item_user_matrix_1.copy()
-item_user_matrices = [item_user_matrix_1, item_user_matrix_2, item_user_matrix_3, item_user_matrix_4, item_user_matrix_5]
-i_u_mat_time = 0.0
-for row in tqdm(list(zip(df_ratings['userId'], df_ratings['movieId'], df_ratings['rating']))):
-    new_user_id = row[0]
-    item = str(row[1])
-    rating = row[2]
-    if new_user_id != user_id:
-        user, user_id, test_sets, train_sets, item_user_matrices, i_u_mat_time = process_user(user, user_id, test_sets, train_sets, item_user_matrices, i_u_mat_time)
-    user.append(row)
-    user_id = new_user_id
+    vocab = []
+    movies_mean_rating = {}
 
-# Last user
-user, user_id, test_sets, train_sets, item_user_matrices, i_u_mat_time = process_user(user, user_id, test_sets, train_sets, item_user_matrices, i_u_mat_time)
+    for row in tqdm(list(zip(df_ratings['userId'], df_ratings['movieId'], df_ratings['rating']))):
+        item = str(row[1])
+        rating = row[2]
+        if item not in movies_mean_rating:
+            movies_mean_rating[item] = (1, rating)
+        else:
+            movies_mean_rating[item] = (movies_mean_rating[item][0] + 1, movies_mean_rating[item][1] + rating)
 
-start = time()
-item_similarities_1 = cosine_similarity(item_user_matrix_1, item_user_matrix_1, dense_output=True)
-item_similarities_2 = cosine_similarity(item_user_matrix_2, item_user_matrix_2, dense_output=True)
-item_similarities_3 = cosine_similarity(item_user_matrix_3, item_user_matrix_3, dense_output=True)
-item_similarities_4 = cosine_similarity(item_user_matrix_4, item_user_matrix_4, dense_output=True)
-item_similarities_5 = cosine_similarity(item_user_matrix_5, item_user_matrix_5, dense_output=True)
-item_sims = [item_similarities_1, item_similarities_2, item_similarities_3, item_similarities_4, item_similarities_5]
-i_u_mat_time += time() - start
+    for movie_id in movie_ids:
+        movie_id = str(movie_id)
+        vocab.append([movie_id])
+        try:
+            movies_mean_rating[movie_id] = movies_mean_rating[movie_id][1] / movies_mean_rating[movie_id][0]
+        except KeyError:
+            movies_mean_rating[movie_id] = 2.5
+    unique_genres = set([g for i in movie_genres for g in i.split('|')])
 
 
+    user = []
+    user_id = 1
+    # Test_sets are lists of dicts (user items)
+    test_1, test_2, test_3, test_4, test_5 = [{}], [{}], [{}], [{}], [{}]
 
-w2v_time, cs_time , w2v_score_time, cs_score_time, w2v_model_time, W2VRMSE, W2VMAE, COSSIMRMSE, COSSIMMAE = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-for k in range(5):
-    train = train_sets[k]
-    test = test_sets[k]
-    cos_sim_matrix = item_sims[k]
-    item_sentences = [list(item_ids.keys()) for user in train for item_ids in user][2:] #skip first two empty
+    # Train_sets are lists of lists(users) of two dicts (positive and negative items respectively)
+    train_1, train_2, train_3, train_4, train_5 = [[{}, {}]], [[{}, {}]], [[{}, {}]], [[{}, {}]], [[{}, {}]]
+    test_sets = [test_1, test_2, test_3, test_4, test_5]
+    train_sets = [train_1, train_2, train_3, train_4, train_5]
+
+    item_user_matrix_1 = sparse.lil_matrix((len(movie_ids), len(users)), dtype=np.float32)
+    item_user_matrix_5 = item_user_matrix_4 = item_user_matrix_3 = item_user_matrix_2 = item_user_matrix_1.copy()
+    item_user_matrices = [item_user_matrix_1, item_user_matrix_2, item_user_matrix_3, item_user_matrix_4, item_user_matrix_5]
+    i_u_mat_time = 0.0
+    for row in tqdm(list(zip(df_ratings['userId'], df_ratings['movieId'], df_ratings['rating']))):
+        new_user_id = row[0]
+        item = str(row[1])
+        rating = row[2]
+        if new_user_id != user_id:
+            user, user_id, test_sets, train_sets, item_user_matrices, i_u_mat_time = process_user(user, user_id, test_sets, train_sets, item_user_matrices, i_u_mat_time)
+        user.append(row)
+        user_id = new_user_id
+
+    # Last user
+    user, user_id, test_sets, train_sets, item_user_matrices, i_u_mat_time = process_user(user, user_id, test_sets, train_sets, item_user_matrices, i_u_mat_time)
+
     start = time()
-    w2v_model = Word2Vec(item_sentences, size=len(unique_genres), window=7, min_count=1, hs=1, workers=6, sg=1)
-    w2v_model.build_vocab(vocab, update=True)
-    w2v_model.train(item_sentences, total_examples=w2v_model.corpus_count, epochs=22)
-    w2v_model.init_sims()
-    w2v_model_time += time() - start
+    item_similarities_1 = cosine_similarity(item_user_matrix_1, item_user_matrix_1, dense_output=True)
+    item_similarities_2 = cosine_similarity(item_user_matrix_2, item_user_matrix_2, dense_output=True)
+    item_similarities_3 = cosine_similarity(item_user_matrix_3, item_user_matrix_3, dense_output=True)
+    item_similarities_4 = cosine_similarity(item_user_matrix_4, item_user_matrix_4, dense_output=True)
+    item_similarities_5 = cosine_similarity(item_user_matrix_5, item_user_matrix_5, dense_output=True)
+    item_sims = [item_similarities_1, item_similarities_2, item_similarities_3, item_similarities_4, item_similarities_5]
+    i_u_mat_time += time() - start
 
-    w2v_final_rmse, w2v_final_mae, cos_sim_final_rmse, cos_sim_final_mae = 0.0, 0.0, 0.0, 0.0
-    m = 0
-    for i in tqdm(range(1,len(test))):
-        #if i % 100 == 1: # using only 1% of test_set, otherwise it takes too long
-        w2v_ratings_sum, w2v_abs_sum, cos_sim_ratings_sum, cos_sim_abs_sum = 0.0, 0.0, 0.0, 0.0
-        test_user = test[i]
-        for item in test_user:
-            actual = test_user[item]
-            startwv = time()
-            predicted_w2v = score_item_to_user_w2v(item, {**train[i][0], **train[i][1]}, w2v_model, w2v_score_time)
-            w2v_time += time() - startwv
-            startcs = time()
-            predicted_cos_sim = score_item_to_user_cos_sim(item, {**train[i][0], **train[i][1]}, cos_sim_matrix, cs_score_time)
-            cs_time += time() - startcs
-            w2v_abs_sum += abs(predicted_w2v - actual)
-            w2v_ratings_sum += (predicted_w2v - actual)**2
-            cos_sim_abs_sum += abs(predicted_cos_sim - actual)
-            cos_sim_ratings_sum += (predicted_cos_sim - actual)**2
-        w2v_user_rmse = math.sqrt(w2v_ratings_sum / len(test_user))
-        w2v_user_mae = w2v_abs_sum/len(test_user)
-        w2v_final_rmse += w2v_user_rmse
-        w2v_final_mae += w2v_user_mae
 
-        cos_sim_user_rmse = math.sqrt(cos_sim_ratings_sum / len(test_user))
-        cos_sim_user_mae = cos_sim_abs_sum/len(test_user)
-        cos_sim_final_rmse += cos_sim_user_rmse
-        cos_sim_final_mae += cos_sim_user_mae
-        m+=1
-    W2VRMSE += w2v_final_rmse/m
-    W2VMAE += w2v_final_mae/m
-    COSSIMRMSE += cos_sim_final_rmse/m
-    COSSIMMAE += cos_sim_final_mae/m
-print('W2VRMSE =', W2VRMSE)
-print('W2VMAE =', W2VMAE)
-print('COSSIMRMSE =', COSSIMRMSE)
-print('COSSIMMAE =', COSSIMMAE)
-print('W2V time =', w2v_time)
-print('COSSIM time =', cs_time)
-print('sim_mat calculations took', i_u_mat_time)
-print('w2v model creating time took', w2v_model_time)
+
+    w2v_time, cs_time , w2v_score_time, cs_score_time, w2v_model_time, W2VRMSE, W2VMAE, COSSIMRMSE, COSSIMMAE = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    for k in range(5):
+        train = train_sets[k]
+        test = test_sets[k]
+        cos_sim_matrix = item_sims[k]
+        item_sentences = [list(item_ids.keys()) for user in train for item_ids in user][2:] #skip first two empty
+        start = time()
+        w2v_model = Word2Vec(item_sentences, size=len(unique_genres), window=7, min_count=1, hs=1, workers=6, sg=1)
+        w2v_model.build_vocab(vocab, update=True)
+        w2v_model.train(item_sentences, total_examples=w2v_model.corpus_count, epochs=22)
+        w2v_model.init_sims()
+        w2v_model_time += time() - start
+
+        w2v_final_rmse, w2v_final_mae, cos_sim_final_rmse, cos_sim_final_mae = 0.0, 0.0, 0.0, 0.0
+        m = 0
+        for i in tqdm(range(1,len(test))):
+            #if i % 100 == 1: # using only 1% of test_set, otherwise it takes too long
+            w2v_ratings_sum, w2v_abs_sum, cos_sim_ratings_sum, cos_sim_abs_sum = 0.0, 0.0, 0.0, 0.0
+            test_user = test[i]
+            for item in test_user:
+                actual = test_user[item]
+                startwv = time()
+                predicted_w2v = score_item_to_user_w2v(item, {**train[i][0], **train[i][1]}, w2v_model, w2v_score_time)
+                w2v_time += time() - startwv
+                startcs = time()
+                predicted_cos_sim = score_item_to_user_cos_sim(item, {**train[i][0], **train[i][1]}, cos_sim_matrix, cs_score_time)
+                cs_time += time() - startcs
+                w2v_abs_sum += abs(predicted_w2v - actual)
+                w2v_ratings_sum += (predicted_w2v - actual)**2
+                cos_sim_abs_sum += abs(predicted_cos_sim - actual)
+                cos_sim_ratings_sum += (predicted_cos_sim - actual)**2
+            w2v_user_rmse = math.sqrt(w2v_ratings_sum / len(test_user))
+            w2v_user_mae = w2v_abs_sum/len(test_user)
+            w2v_final_rmse += w2v_user_rmse
+            w2v_final_mae += w2v_user_mae
+
+            cos_sim_user_rmse = math.sqrt(cos_sim_ratings_sum / len(test_user))
+            cos_sim_user_mae = cos_sim_abs_sum/len(test_user)
+            cos_sim_final_rmse += cos_sim_user_rmse
+            cos_sim_final_mae += cos_sim_user_mae
+            m+=1
+        W2VRMSE += w2v_final_rmse/m
+        W2VMAE += w2v_final_mae/m
+        COSSIMRMSE += cos_sim_final_rmse/m
+        COSSIMMAE += cos_sim_final_mae/m
+    print('W2VRMSE =', W2VRMSE)
+    print('W2VMAE =', W2VMAE)
+    print('COSSIMRMSE =', COSSIMRMSE)
+    print('COSSIMMAE =', COSSIMMAE)
+    print('W2V overall time =', w2v_time)
+    print('COSSIM overall time =', cs_time)
+    print('sim_mat calculations took', i_u_mat_time)
+    print('w2v model creating time took', w2v_model_time)
+
+if __name__ == "__main__":
+    main()
