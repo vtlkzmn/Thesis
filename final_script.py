@@ -327,6 +327,9 @@ def main():
     print('COSSIM overall time =', cs_time)
     print('sim_mat calculations took', i_u_mat_time)
     print('w2v model creating time took', w2v_model_time)
+    
+    # Adding model to Elastic
+    # add_model_to_elastic(w2v_model)
 
 if __name__ == "__main__":
     main()
