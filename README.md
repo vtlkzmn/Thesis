@@ -1,16 +1,6 @@
 # Thesis
 Model for STACC's Recommender System
 
-P.S. Everything tested on Linux Mint, hope this is working on most UNIX systems, for other OS modify script commands:
-
-`$ wget http://files.grouplens.org/datasets/movielens/ml-1m.zip && mkdir -p ~/data/movielens && unzip -d ~/data/movielens/ ml-1m.zip && rm ml-1m.zip`
-
-For smaller dataset use this script (much faster, if you don't use any powerful server):
-
-`$ wget http://files.grouplens.org/datasets/movielens/ml-100k.zip && mkdir -p ~/data/movielens && unzip -d ~/data/movielens/ ml-100k.zip && rm ml-100k.zip`
-
-(with last option you need to modify base folder (and some filenames as well) inside the script)
-
 # Benchmarks
 
 |  [Movielens 1M](http://grouplens.org/datasets/movielens/1m) |  RMSE  |   MAE  |
@@ -28,22 +18,18 @@ For smaller dataset use this script (much faster, if you don't use any powerful 
 
 
 *table is modified from origin
+
 *Original: https://github.com/NicolasHug/Surprise
+
+
 # Environment setup
+1. Get the data:
+`$ wget http://files.grouplens.org/datasets/movielens/ml-1m.zip && mkdir -p ~/data/movielens && unzip -d ~/data/movielens/ ml-1m.zip && rm ml-1m.zip`
+2. Download and install Elasticsearch (tested on 5.2 and 6.3) https://www.elastic.co/guide/en/elasticsearch/reference/current/_installation.html 
 
-If you need more instructions how to prepare environment not to spend time redirecting to different pages and installing too many tools-packages, please let me know (vtlkzmn@gmail.com)
-
-Download conda from https://conda.io/miniconda.html and install it (https://conda.io/docs/install/quick.html#linux-miniconda-install).
-
-Download and install Elasticsearch 5.2+.X https://www.elastic.co/guide/en/elasticsearch/reference/current/_installation.html (Extremely fast search engine, to provide online recommendations when there is no time to wait while model will train). 
-
-Make sure that Elasticsearch is running as a service, for that download .deb package and it'll do the job itselt.
+3. Install dependencies
 ```
-$ conda create --name virtual_environment_name python=3
-$ source activate venv_name
-$ pip install --upgrade gensim
-$ pip install jupyter
-$ pip install pandas
+$ pip3 install gensim sklearn tqdm jupyter pandas numpy
 ```
 
-Vualaá! Now You are ready to test script as well
+Vualaá! Now You are ready to run the code.
