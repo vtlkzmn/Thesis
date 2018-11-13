@@ -1,5 +1,5 @@
 # Thesis
-Model for STACC's Recommender System
+Model for one Recommender System
 
 # Benchmarks
 
